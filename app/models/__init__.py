@@ -1,17 +1,17 @@
-from .enums import UserRole, TicketStatus
-from .mixins import UUIDPrimaryKeyMixin, CreatedUpdatedFieldsMixin
-from .user import User
 from .citizen_profile import CitizenProfile
+from .enums import TicketStatus, UserRole
+from .mixins import CreatedUpdatedFieldsMixin, UUIDPrimaryKeyMixin
 from .ticket import Ticket
+from .user import User
 
 __all__ = [
-    "UserRole",
+    "CitizenProfile",
+    "CreatedUpdatedFieldsMixin",
+    "Ticket",
     "TicketStatus",
     "UUIDPrimaryKeyMixin",
-    "CreatedUpdatedFieldsMixin",
     "User",
-    "CitizenProfile",
-    "Ticket",
+    "UserRole",
 ]
 
 # Use this list in Tortoise.init to register models:

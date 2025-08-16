@@ -1,6 +1,5 @@
-from collections.abc import AsyncGenerator
 import logging
-from typing import Optional
+from collections.abc import AsyncGenerator
 
 from tortoise import Tortoise, connections
 from tortoise.backends.base.client import BaseDBAsyncClient
@@ -53,14 +52,16 @@ class DatabaseManager:
     - setup(): initialize connections with the configured apps
     - stop(): close all connections
 
-    NOTE:
+    Note:
     * Do NOT call `Tortoise.generate_schemas()` here; Aerich owns schema migrations.
     * Enable SQL logging via `echo=True` or DEBUG to see ORM queries.
+
     """
+
     started: bool = False
 
     @classmethod
-    async def setup(cls, *, echo: Optional[bool] = None) -> None:
+    async def setup(cls, *, echo: bool | None = None) -> None:
         """
         Initialize Tortoise connections and ORM apps.
         """
@@ -91,9 +92,10 @@ async def get_db() -> AsyncGenerator[BaseDBAsyncClient, None]:
             await Ticket.filter(...).using_db(db).update(...)
             # Transaction will commit on success or rollback on exception.
 
-    NOTE:
+    Note:
     * Use `.using_db(db)` on queries to bind them to this transaction.
     * If you do not need a transaction, you can get a pooled client via `get_db_client()`.
+
     """
     async with in_transaction("default") as db:
         yield db

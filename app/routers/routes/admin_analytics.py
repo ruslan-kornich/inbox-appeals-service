@@ -1,9 +1,10 @@
 # app/routes/admin_analytics.py
 from datetime import datetime
+
 from fastapi import APIRouter, Depends
 
 from app.models import UserRole
-from app.schemas.analytics import DateRangeQuery, OverviewStats, StaffPerformanceResponse, StaffPerformanceItem
+from app.schemas.analytics import OverviewStats, StaffPerformanceItem, StaffPerformanceResponse
 from app.security.dependencies import require_roles
 from app.services.analytics_service import AnalyticsService
 
@@ -23,6 +24,7 @@ async def analytics_overview(date_from: str | None = None, date_to: str | None =
 
 
 from uuid import UUID
+
 
 @router.get("/staff-performance", response_model=StaffPerformanceResponse, dependencies=[Depends(require_roles(UserRole.ADMIN))])
 async def analytics_staff_performance(

@@ -1,7 +1,7 @@
 # app/routes/auth.py
 from fastapi import APIRouter, HTTPException, status
 
-from app.schemas.auth import RegisterUserBody, LoginBody, AccessTokenResponse
+from app.schemas.auth import AccessTokenResponse, LoginBody, RegisterUserBody
 from app.schemas.users import UserShort
 from app.services.auth_service import AuthService
 

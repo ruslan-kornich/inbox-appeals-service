@@ -1,4 +1,3 @@
-from typing import Tuple
 
 from passlib.context import CryptContext
 
@@ -7,7 +6,6 @@ from app.repositories.citizen_profiles_repository import CitizenProfileRepositor
 from app.repositories.users_repository import UserRepository
 from app.schemas.auth import RegisterUserBody
 from app.security.jwt import create_access_token
-
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -31,7 +29,7 @@ class AuthService:
         self.user_repo = UserRepository()
         self.profile_repo = CitizenProfileRepository()
 
-    async def register_user(self, payload: RegisterUserBody) -> Tuple[str, UserRole]:
+    async def register_user(self, payload: RegisterUserBody) -> tuple[str, UserRole]:
         """
         Create a USER and its citizen profile inside a transaction.
         Returns (user_id, role).

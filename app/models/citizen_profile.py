@@ -1,5 +1,6 @@
 from tortoise import fields
-from .mixins import UUIDPrimaryKeyMixin, CreatedUpdatedFieldsMixin
+
+from .mixins import CreatedUpdatedFieldsMixin, UUIDPrimaryKeyMixin
 
 
 class CitizenProfile(UUIDPrimaryKeyMixin, CreatedUpdatedFieldsMixin):
@@ -7,6 +8,7 @@ class CitizenProfile(UUIDPrimaryKeyMixin, CreatedUpdatedFieldsMixin):
     Profile data required by the spec for end-users (role=USER).
     Kept separate from 'User' so staff/admin accounts do not require citizen fields.
     """
+
     user = fields.OneToOneField(
         "models.User",
         related_name="citizen_profile",

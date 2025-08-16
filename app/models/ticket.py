@@ -1,6 +1,7 @@
 from tortoise import fields, timezone
-from .mixins import UUIDPrimaryKeyMixin, CreatedUpdatedFieldsMixin
+
 from .enums import TicketStatus
+from .mixins import CreatedUpdatedFieldsMixin, UUIDPrimaryKeyMixin
 
 
 class Ticket(UUIDPrimaryKeyMixin, CreatedUpdatedFieldsMixin):
@@ -10,6 +11,7 @@ class Ticket(UUIDPrimaryKeyMixin, CreatedUpdatedFieldsMixin):
     Optional fields: staff_assignee, staff_comment.
     Additional requirement: store 'who changed' and 'when' for processed tickets.
     """
+
     owner = fields.ForeignKeyField(
         "models.User",
         related_name="owned_tickets",

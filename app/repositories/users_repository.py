@@ -1,6 +1,7 @@
 from fastapi_pagination import Page
 
 from app.models import User, UserRole
+
 from .base import BaseRepository
 
 

@@ -1,7 +1,5 @@
 
-from typing import List
 
-from fastapi_pagination import Page
 
 from app.models import User, UserRole
 from app.repositories.users_repository import UserRepository
@@ -16,7 +14,7 @@ class AdminService:
     def __init__(self) -> None:
         self.user_repo = UserRepository()
 
-    async def list_staff(self) -> List[User]:
+    async def list_staff(self) -> list[User]:
         """Return all staff users."""
         return await self.user_repo.list_staff()
 

@@ -1,5 +1,4 @@
 
-from typing import List
 
 from app.models import Ticket, TicketStatus, User
 from app.repositories.tickets_repository import TicketRepository
@@ -19,7 +18,7 @@ class StaffService:
         staff_user: User,
         only_my: bool = False,
         statuses: list[TicketStatus] | None = None,
-    ) -> List[Ticket]:
+    ) -> list[Ticket]:
         """
         List tickets for processing. If only_my=True, return tickets assigned to staff_user.
         """

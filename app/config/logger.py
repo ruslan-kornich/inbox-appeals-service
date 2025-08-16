@@ -14,7 +14,7 @@ if logger.hasHandlers():
 
 # Formatter for log messages
 formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
 # Console handler

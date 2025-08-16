@@ -1,6 +1,7 @@
 
 
 from app.models import CitizenProfile
+
 from .base import BaseRepository
 
 

@@ -1,6 +1,6 @@
 from collections.abc import Iterable, Sequence
 from contextlib import asynccontextmanager
-from typing import Any, Generic, TypeVar, List, Optional
+from typing import Any, Generic, TypeVar
 
 from tortoise import models
 from tortoise.backends.base.client import BaseDBAsyncClient
@@ -21,9 +21,10 @@ class BaseRepository(Generic[T]):
     Generic repository for Tortoise ORM models.
     Provides common CRUD operations, filtering, ordering, preloading and transactions.
 
-    IMPORTANT:
+    Important:
     - Never pass a string connection name into QuerySet.using_db(...).
       Only pass a real DB client (BaseDBAsyncClient) when explicitly working inside a transaction.
+
     """
 
     model: type[T]
@@ -91,7 +92,7 @@ class BaseRepository(Generic[T]):
         id: Any,
         select_related: Iterable[str] | None = None,
         prefetch_related: Iterable[str] | None = None,
-        using_db: Optional[BaseDBAsyncClient] = None,
+        using_db: BaseDBAsyncClient | None = None,
     ) -> T | None:
         """
         Retrieve a single record by primary key.
@@ -114,7 +115,7 @@ class BaseRepository(Generic[T]):
         order_by: Sequence[str] | None = None,
         select_related: Iterable[str] | None = None,
         prefetch_related: Iterable[str] | None = None,
-        using_db: Optional[BaseDBAsyncClient] = None,
+        using_db: BaseDBAsyncClient | None = None,
     ) -> T | None:
         """
         Retrieve the first record matching filters and order_by.
@@ -141,8 +142,8 @@ class BaseRepository(Generic[T]):
         offset: int | None = None,
         select_related: Iterable[str] | None = None,
         prefetch_related: Iterable[str] | None = None,
-        using_db: Optional[BaseDBAsyncClient] = None,
-    ) -> List[T]:
+        using_db: BaseDBAsyncClient | None = None,
+    ) -> list[T]:
         """
         List records with optional filters, ordering, and classic pagination (limit/offset).
         """
@@ -170,7 +171,7 @@ class BaseRepository(Generic[T]):
         order_by: Sequence[str] | None = None,
         select_related: Iterable[str] | None = None,
         prefetch_related: Iterable[str] | None = None,
-        using_db: Optional[BaseDBAsyncClient] = None,
+        using_db: BaseDBAsyncClient | None = None,
     ):
         """
         Return a Page[T] using fastapi-pagination (if installed).
@@ -191,7 +192,7 @@ class BaseRepository(Generic[T]):
         )
         return await tortoise_paginate(qs)
 
-    async def count(self, *, filters: dict[str, Any] | None = None, using_db: Optional[BaseDBAsyncClient] = None) -> int:
+    async def count(self, *, filters: dict[str, Any] | None = None, using_db: BaseDBAsyncClient | None = None) -> int:
         """
         Count records matching filters.
         """
@@ -202,7 +203,7 @@ class BaseRepository(Generic[T]):
         qs = self._apply_filters(qs, filters=filters)
         return await qs.count()
 
-    async def exists(self, *, filters: dict[str, Any] | None = None, using_db: Optional[BaseDBAsyncClient] = None) -> bool:
+    async def exists(self, *, filters: dict[str, Any] | None = None, using_db: BaseDBAsyncClient | None = None) -> bool:
         """
         Check existence of records matching filters.
         """
@@ -215,7 +216,7 @@ class BaseRepository(Generic[T]):
 
     # ---------- Write operations ----------
 
-    async def create(self, *, values: dict[str, Any], using_db: Optional[BaseDBAsyncClient] = None) -> T:
+    async def create(self, *, values: dict[str, Any], using_db: BaseDBAsyncClient | None = None) -> T:
         """
         Create a single record.
         """
@@ -227,9 +228,9 @@ class BaseRepository(Generic[T]):
         self,
         *,
         values: Iterable[dict[str, Any]],
-        using_db: Optional[BaseDBAsyncClient] = None,
+        using_db: BaseDBAsyncClient | None = None,
         batch_size: int | None = None,
-    ) -> List[T]:
+    ) -> list[T]:
         """
         Bulk create records. Returns created instances (without PK roundtrip).
         """
@@ -241,7 +242,7 @@ class BaseRepository(Generic[T]):
         )
         return instances
 
-    async def update_by_id(self, *, id: Any, values: dict[str, Any], using_db: Optional[BaseDBAsyncClient] = None) -> int:
+    async def update_by_id(self, *, id: Any, values: dict[str, Any], using_db: BaseDBAsyncClient | None = None) -> int:
         """
         Update a single record by primary key. Returns affected rows count.
         """
@@ -250,7 +251,7 @@ class BaseRepository(Generic[T]):
             qs = qs.using_db(using_db)
         return await qs.update(**values)
 
-    async def update_where(self, *, filters: dict[str, Any], values: dict[str, Any], using_db: Optional[BaseDBAsyncClient] = None) -> int:
+    async def update_where(self, *, filters: dict[str, Any], values: dict[str, Any], using_db: BaseDBAsyncClient | None = None) -> int:
         """
         Update all records matching filters. Returns affected rows count.
         """
@@ -259,7 +260,7 @@ class BaseRepository(Generic[T]):
             qs = qs.using_db(using_db)
         return await qs.update(**values)
 
-    async def delete_by_id(self, *, id: Any, using_db: Optional[BaseDBAsyncClient] = None) -> int:
+    async def delete_by_id(self, *, id: Any, using_db: BaseDBAsyncClient | None = None) -> int:
         """
         Delete a single record by primary key. Returns affected rows count.
         """
@@ -268,7 +269,7 @@ class BaseRepository(Generic[T]):
             qs = qs.using_db(using_db)
         return await qs.delete()
 
-    async def delete_where(self, *, filters: dict[str, Any], using_db: Optional[BaseDBAsyncClient] = None) -> int:
+    async def delete_where(self, *, filters: dict[str, Any], using_db: BaseDBAsyncClient | None = None) -> int:
         """
         Delete all records matching filters. Returns affected rows count.
         """

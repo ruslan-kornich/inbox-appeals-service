@@ -2,7 +2,6 @@
 
 import asyncio
 import sys
-
 from getpass import getpass
 
 from app.config.db import DatabaseManager
@@ -15,7 +14,6 @@ async def create_admin_user():
     """
     CLI utility to create an ADMIN user with a hashed password.
     """
-
     print("👤 Create admin user\n")
 
     email = input("Email: ").strip()
