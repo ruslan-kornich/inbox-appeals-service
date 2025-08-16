@@ -1,6 +1,8 @@
 
 from typing import List
 
+from fastapi_pagination import Page
+
 from app.models import User, UserRole
 from app.repositories.users_repository import UserRepository
 from app.services.auth_service import hash_password
@@ -34,3 +36,6 @@ class AdminService:
                 using_db=conn,
             )
         return user
+
+    async def list_users_paginated(self, *, page: int, size: int) -> tuple[list[User], int]:
+        return await self.user_repo.list_users_paginated(page=page, size=size)

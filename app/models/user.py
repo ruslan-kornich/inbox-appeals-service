@@ -21,7 +21,6 @@ class User(UUIDPrimaryKeyMixin, CreatedUpdatedFieldsMixin):
 
     class Meta:
         table = "auth_user"
-        # email already has unique & index; role is indexed for admin/staff queries
         indexes = ("email", "role")
 
     def __str__(self) -> str:

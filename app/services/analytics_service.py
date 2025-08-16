@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from uuid import UUID
 
 from tortoise.functions import Count, Max
 
@@ -44,51 +45,57 @@ class AnalyticsService:
     async def staff_performance(
             self,
             *,
-            date_from: datetime | None,
-            date_to: datetime | None,
+            date_from: datetime | None = None,
+            date_to: datetime | None = None,
+            staff_id: UUID | None = None,
     ) -> list[dict]:
         """
-        For each staff member who modified tickets in the period, return counts by status
-        and last modification timestamp. Uses aggregate query on Ticket.
+        Return per-staff performance metrics for the entire dataset (unless filtered).
+        Optionally filter by date or staff_id.
         """
         filters: dict[str, object] = {"last_modified_by_id__not": None}
+
         if date_from:
             filters["last_modified_at__gte"] = date_from
         if date_to:
             filters["last_modified_at__lt"] = date_to + timedelta(days=1)
+        if staff_id:
+            filters["last_modified_by_id"] = str(staff_id)
 
-        # Aggregate per staff and status
-        rows = await Ticket.filter(**filters).values(
-            "last_modified_by_id", "status",
-        ).annotate(
+        rows = await Ticket.filter(**filters) \
+            .annotate(
             cnt=Count("id"),
             last_mod=Max("last_modified_at"),
-        )
+        ) \
+            .group_by("last_modified_by_id", "status") \
+            .values("last_modified_by_id", "status", "cnt", "last_mod")
 
-        # Reduce to dict[staff_id] = metrics
-        perf: dict[str, dict] = {}
-        for r in rows:
-            staff_id = str(r["last_modified_by_id"])
-            status = TicketStatus(r["status"])
-            cnt = int(r["cnt"])
-            last_mod = r["last_mod"].isoformat() if r["last_mod"] else None
+        performance_map: dict[str, dict] = {}
 
-            rec = perf.setdefault(staff_id, {
-                "staff_id": staff_id,
+        for row in rows:
+            staff_id_str = str(row["last_modified_by_id"])
+            status = TicketStatus(row["status"])
+            count = int(row["cnt"])
+            last_modified = row["last_mod"].isoformat() if row["last_mod"] else None
+
+            record = performance_map.setdefault(staff_id_str, {
+                "staff_id": staff_id_str,
                 "resolved_count": 0,
                 "rejected_count": 0,
                 "in_progress_count": 0,
                 "last_modified_at_max": None,
             })
+
             if status == TicketStatus.RESOLVED:
-                rec["resolved_count"] += cnt
+                record["resolved_count"] += count
             elif status == TicketStatus.REJECTED:
-                rec["rejected_count"] += cnt
+                record["rejected_count"] += count
             elif status == TicketStatus.IN_PROGRESS:
-                rec["in_progress_count"] += cnt
+                record["in_progress_count"] += count
 
-            # Track max last_mod
-            if last_mod and (rec["last_modified_at_max"] is None or last_mod > rec["last_modified_at_max"]):
-                rec["last_modified_at_max"] = last_mod
+            if last_modified and (
+                    record["last_modified_at_max"] is None or last_modified > record["last_modified_at_max"]
+            ):
+                record["last_modified_at_max"] = last_modified
 
-        return list(perf.values())
+        return list(performance_map.values())
