@@ -38,7 +38,7 @@ class TicketService:
         Retrieve a single ticket if it belongs to the owner.
         """
         ticket = await self.ticket_repo.get_by_id(
-            id=ticket_id,
+            pk=ticket_id,
             select_related=["staff_assignee", "last_modified_by"],
         )
         if ticket is None or str(ticket.owner_id) != owner_id:

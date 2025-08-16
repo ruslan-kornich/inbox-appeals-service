@@ -33,7 +33,7 @@ class StaffService:
         Detailed ticket for staff.
         """
         return await self.ticket_repo.get_by_id(
-            id=ticket_id,
+            pk=ticket_id,
             select_related=["owner", "staff_assignee", "last_modified_by"],
         )
 
