@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.models import UserRole
@@ -9,12 +11,15 @@ router = APIRouter()
 service = TicketService()
 
 
-@router.post("", response_model=TicketDetail, dependencies=[Depends(require_roles(UserRole.USER))],
-             status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    dependencies=[Depends(require_roles(UserRole.USER))],
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_ticket(
-        body: CreateTicketBody,
-        current=Depends(get_current_user),
-):
+    body: CreateTicketBody,
+    current: Annotated[tuple[str, str], Depends(get_current_user)],
+) -> TicketDetail:
     """
     Create a ticket for the current USER.
     """
@@ -33,18 +38,29 @@ async def create_ticket(
     )
 
 
-@router.get("/my", response_model=list[TicketListItem], dependencies=[Depends(require_roles(UserRole.USER))])
-async def list_my_tickets(current=Depends(get_current_user)):
+@router.get(
+    "/my",
+    dependencies=[Depends(require_roles(UserRole.USER))],
+)
+async def list_my_tickets(
+    current: Annotated[tuple[str, str], Depends(get_current_user)],
+) -> list[TicketListItem]:
     """
     List tickets of the current USER (lightweight listing).
     """
     user_id, _ = current
     items = await service.list_my_tickets(owner_id=user_id)
-    return [TicketListItem(id=str(t.id), status=t.status, created_at=t.created_at) for t in items]
+    return [TicketListItem(id=str(ticket.id), status=ticket.status, created_at=ticket.created_at) for ticket in items]
 
 
-@router.get("/my/{ticket_id}", response_model=TicketDetail, dependencies=[Depends(require_roles(UserRole.USER))])
-async def get_my_ticket(ticket_id: str, current=Depends(get_current_user)):
+@router.get(
+    "/my/{ticket_id}",
+    dependencies=[Depends(require_roles(UserRole.USER))],
+)
+async def get_my_ticket(
+    ticket_id: str,
+    current: Annotated[tuple[str, str], Depends(get_current_user)],
+) -> TicketDetail:
     """
     Get a specific ticket of the current USER (detailed).
     """

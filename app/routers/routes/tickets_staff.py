@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.models import TicketStatus, UserRole
 from app.repositories.users_repository import UserRepository
@@ -11,19 +13,33 @@ service = StaffService()
 user_repo = UserRepository()
 
 
-@router.get("", response_model=list[TicketListItem], dependencies=[Depends(require_roles(UserRole.STAFF))])
-async def list_queue(only_my: bool = False, current=Depends(get_current_user)):
+@router.get(
+    "",
+    dependencies=[Depends(require_roles(UserRole.STAFF))],
+)
+async def list_queue(
+    only_my: Annotated[
+        bool,
+        Query(default=False, description="If true, only show tickets assigned to current staff"),
+    ],
+    current: Annotated[tuple[str, str], Depends(get_current_user)],
+) -> list[TicketListItem]:
     """
-    Staff queue listing: NEW/IN_PROGRESS by default; if only_my=True — only assigned to self.
+    Staff queue listing: NEW/IN_PROGRESS by default.
+
+    If only_my=True, only tickets assigned to the current staff member are returned.
     """
     user_id, _ = current
-    staff_user = await user_repo.get_by_id(id=user_id)
+    staff_user = await user_repo.get_by_id(pk=user_id)
     items = await service.list_queue(staff_user=staff_user, only_my=only_my)
-    return [TicketListItem(id=str(t.id), status=t.status, created_at=t.created_at) for t in items]
+    return [TicketListItem(id=str(ticket.id), status=ticket.status, created_at=ticket.created_at) for ticket in items]
 
 
-@router.get("/{ticket_id}", response_model=TicketDetail, dependencies=[Depends(require_roles(UserRole.STAFF))])
-async def get_ticket(ticket_id: str):
+@router.get(
+    "/{ticket_id}",
+    dependencies=[Depends(require_roles(UserRole.STAFF))],
+)
+async def get_ticket(ticket_id: str) -> TicketDetail:
     """
     Detailed view for staff.
     """
@@ -43,14 +59,23 @@ async def get_ticket(ticket_id: str):
     )
 
 
-@router.patch("/{ticket_id}", dependencies=[Depends(require_roles(UserRole.STAFF))],
-              status_code=status.HTTP_204_NO_CONTENT)
-async def update_ticket(ticket_id: str, body: StaffUpdateTicketBody, current=Depends(get_current_user)):
+@router.patch(
+    "/{ticket_id}",
+    dependencies=[Depends(require_roles(UserRole.STAFF))],
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def update_ticket(
+    ticket_id: str,
+    body: StaffUpdateTicketBody,
+    current: Annotated[tuple[str, str], Depends(get_current_user)],
+) -> None:
     """
-    Update status/comment; optionally assign to self (assign_to_self=True).
+    Update status/comment for a ticket.
+
+    Optionally assign to self (assign_to_self=True).
     """
     user_id, _ = current
-    staff_user = await user_repo.get_by_id(id=user_id)
+    staff_user = await user_repo.get_by_id(pk=user_id)
     new_status = body.status or TicketStatus.IN_PROGRESS
     affected = await service.update_ticket(
         ticket_id=ticket_id,

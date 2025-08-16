@@ -1,30 +1,31 @@
-from collections.abc import Iterable, Sequence
+
+from collections.abc import AsyncIterator, Iterable, Sequence
 from contextlib import asynccontextmanager
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from tortoise import models
 from tortoise.backends.base.client import BaseDBAsyncClient
+from tortoise.queryset import QuerySet
 from tortoise.transactions import in_transaction
 
 try:
     # Optional pagination integration
     from fastapi_pagination.ext.tortoise import paginate as tortoise_paginate
+
     _HAS_PAGINATION = True
 except Exception:
     _HAS_PAGINATION = False
 
-T = TypeVar("T", bound=models.Model)
+PAGINATION_NOT_INSTALLED_MSG = (
+    "fastapi-pagination is not installed; use `list_records()` with limit/offset instead."
+)
 
 
-class BaseRepository(Generic[T]):
+class BaseRepository[T: models.Model]:
     """
     Generic repository for Tortoise ORM models.
-    Provides common CRUD operations, filtering, ordering, preloading and transactions.
 
-    Important:
-    - Never pass a string connection name into QuerySet.using_db(...).
-      Only pass a real DB client (BaseDBAsyncClient) when explicitly working inside a transaction.
-
+    Provides common CRUD operations, filtering, ordering, preloading, and transactions.
     """
 
     model: type[T]
@@ -33,23 +34,27 @@ class BaseRepository(Generic[T]):
         """
         Initialize the repository for a given Tortoise model.
 
-        :param model: Tortoise model class
+        :param model: Tortoise model class.
         """
         self.model = model
 
     # ---------- Query building helpers ----------
 
-    def _apply_filters(self, qs, *, filters: dict[str, Any] | None) -> Any:
+    def _apply_filters(self, qs: QuerySet[T], *, filters: dict[str, Any] | None) -> QuerySet[T]:
         """
-        Apply Tortoise-style filters where keys support lookups (e.g., 'created_at__gte').
+        Apply filters to a QuerySet.
+
+        Keys support Tortoise-style lookups (e.g., 'created_at__gte').
         """
         if not filters:
             return qs
         return qs.filter(**filters)
 
-    def _apply_ordering(self, qs, *, order_by: Sequence[str] | None) -> Any:
+    def _apply_ordering(self, qs: QuerySet[T], *, order_by: Sequence[str] | None) -> QuerySet[T]:
         """
-        Apply ordering. Use list like ['-created_at', 'status'].
+        Apply ordering to a QuerySet.
+
+        Use a sequence like ['-created_at', 'status'].
         """
         if not order_by:
             return qs
@@ -57,15 +62,16 @@ class BaseRepository(Generic[T]):
 
     def _apply_preloads(
         self,
-        qs,
+        qs: QuerySet[T],
         *,
         select_related: Iterable[str] | None,
         prefetch_related: Iterable[str] | None,
-    ) -> Any:
+    ) -> QuerySet[T]:
         """
-        Apply relation preloading:
-        - select_related: FK joins (single-valued)
-        - prefetch_related: reverse/many relations
+        Apply relation preloading.
+
+        - select_related: FK joins (single-valued).
+        - prefetch_related: reverse/many relations.
         """
         if select_related:
             qs = qs.select_related(*select_related)
@@ -76,10 +82,12 @@ class BaseRepository(Generic[T]):
     # ---------- Transactions ----------
 
     @asynccontextmanager
-    async def transaction(self):
+    async def transaction(self) -> AsyncIterator[BaseDBAsyncClient]:
         """
-        Transaction context manager. Yields a DB client (BaseDBAsyncClient).
-        Pass this client into repository methods via the 'using_db' argument.
+        Provide an async transaction context manager.
+
+        Yields a DB client (BaseDBAsyncClient). Pass this client into repository
+        methods via the 'using_db' argument.
         """
         async with in_transaction() as conn:
             yield conn
@@ -89,7 +97,7 @@ class BaseRepository(Generic[T]):
     async def get_by_id(
         self,
         *,
-        id: Any,
+        pk: Any,
         select_related: Iterable[str] | None = None,
         prefetch_related: Iterable[str] | None = None,
         using_db: BaseDBAsyncClient | None = None,
@@ -97,7 +105,7 @@ class BaseRepository(Generic[T]):
         """
         Retrieve a single record by primary key.
         """
-        qs = self.model.filter(id=id)
+        qs: QuerySet[T] = self.model.filter(id=pk)
         if using_db is not None:
             qs = qs.using_db(using_db)
 
@@ -118,9 +126,9 @@ class BaseRepository(Generic[T]):
         using_db: BaseDBAsyncClient | None = None,
     ) -> T | None:
         """
-        Retrieve the first record matching filters and order_by.
+        Retrieve the first record matching filters and ordering.
         """
-        qs = self.model.all()
+        qs: QuerySet[T] = self.model.all()
         if using_db is not None:
             qs = qs.using_db(using_db)
 
@@ -133,7 +141,7 @@ class BaseRepository(Generic[T]):
         )
         return await qs.first()
 
-    async def list_records(
+    async def list_records(  # noqa: PLR0913
         self,
         *,
         filters: dict[str, Any] | None = None,
@@ -145,9 +153,11 @@ class BaseRepository(Generic[T]):
         using_db: BaseDBAsyncClient | None = None,
     ) -> list[T]:
         """
-        List records with optional filters, ordering, and classic pagination (limit/offset).
+        List records with optional filters, ordering, and classic pagination.
+
+        Supports `limit`/`offset` pagination when fastapi-pagination is not used.
         """
-        qs = self.model.all()
+        qs: QuerySet[T] = self.model.all()
         if using_db is not None:
             qs = qs.using_db(using_db)
 
@@ -172,14 +182,15 @@ class BaseRepository(Generic[T]):
         select_related: Iterable[str] | None = None,
         prefetch_related: Iterable[str] | None = None,
         using_db: BaseDBAsyncClient | None = None,
-    ):
+    ) -> Any:
         """
-        Return a Page[T] using fastapi-pagination (if installed).
+        Return a paginated response using fastapi-pagination.
         """
         if not _HAS_PAGINATION:
-            raise RuntimeError("fastapi-pagination is not installed; use `list_records()` with limit/offset instead.")
+            msg = PAGINATION_NOT_INSTALLED_MSG
+            raise RuntimeError(msg)
 
-        qs = self.model.all()
+        qs: QuerySet[T] = self.model.all()
         if using_db is not None:
             qs = qs.using_db(using_db)
 
@@ -196,18 +207,23 @@ class BaseRepository(Generic[T]):
         """
         Count records matching filters.
         """
-        qs = self.model.all()
+        qs: QuerySet[T] = self.model.all()
         if using_db is not None:
             qs = qs.using_db(using_db)
 
         qs = self._apply_filters(qs, filters=filters)
         return await qs.count()
 
-    async def exists(self, *, filters: dict[str, Any] | None = None, using_db: BaseDBAsyncClient | None = None) -> bool:
+    async def exists(
+        self,
+        *,
+        filters: dict[str, Any] | None = None,
+        using_db: BaseDBAsyncClient | None = None,
+    ) -> bool:
         """
-        Check existence of records matching filters.
+        Check whether any record exists that matches the provided filters.
         """
-        qs = self.model.all()
+        qs: QuerySet[T] = self.model.all()
         if using_db is not None:
             qs = qs.using_db(using_db)
 
@@ -218,7 +234,7 @@ class BaseRepository(Generic[T]):
 
     async def create(self, *, values: dict[str, Any], using_db: BaseDBAsyncClient | None = None) -> T:
         """
-        Create a single record.
+        Create a single record and return the saved instance.
         """
         instance = self.model(**values)
         await instance.save(using_db=using_db)
@@ -232,7 +248,9 @@ class BaseRepository(Generic[T]):
         batch_size: int | None = None,
     ) -> list[T]:
         """
-        Bulk create records. Returns created instances (without PK roundtrip).
+        Bulk create records and return the created instances.
+
+        Primary keys may be generated without per-row roundtrip depending on the backend.
         """
         instances = [self.model(**val) for val in values]
         await self.model.bulk_create(
@@ -242,38 +260,50 @@ class BaseRepository(Generic[T]):
         )
         return instances
 
-    async def update_by_id(self, *, id: Any, values: dict[str, Any], using_db: BaseDBAsyncClient | None = None) -> int:
+    async def update_by_id(
+        self,
+        *,
+        pk: Any,
+        values: dict[str, Any],
+        using_db: BaseDBAsyncClient | None = None,
+    ) -> int:
         """
-        Update a single record by primary key. Returns affected rows count.
+        Update a single record by primary key and return the affected rows count.
         """
-        qs = self.model.filter(id=id)
+        qs: QuerySet[T] = self.model.filter(id=pk)
         if using_db is not None:
             qs = qs.using_db(using_db)
         return await qs.update(**values)
 
-    async def update_where(self, *, filters: dict[str, Any], values: dict[str, Any], using_db: BaseDBAsyncClient | None = None) -> int:
+    async def update_where(
+        self,
+        *,
+        filters: dict[str, Any],
+        values: dict[str, Any],
+        using_db: BaseDBAsyncClient | None = None,
+    ) -> int:
         """
-        Update all records matching filters. Returns affected rows count.
+        Update all records matching filters and return the affected rows count.
         """
-        qs = self.model.filter(**(filters or {}))
+        qs: QuerySet[T] = self.model.filter(**(filters or {}))
         if using_db is not None:
             qs = qs.using_db(using_db)
         return await qs.update(**values)
 
-    async def delete_by_id(self, *, id: Any, using_db: BaseDBAsyncClient | None = None) -> int:
+    async def delete_by_id(self, *, pk: Any, using_db: BaseDBAsyncClient | None = None) -> int:
         """
-        Delete a single record by primary key. Returns affected rows count.
+        Delete a single record by primary key and return the affected rows count.
         """
-        qs = self.model.filter(id=id)
+        qs: QuerySet[T] = self.model.filter(id=pk)
         if using_db is not None:
             qs = qs.using_db(using_db)
         return await qs.delete()
 
     async def delete_where(self, *, filters: dict[str, Any], using_db: BaseDBAsyncClient | None = None) -> int:
         """
-        Delete all records matching filters. Returns affected rows count.
+        Delete all records matching filters and return the affected rows count.
         """
-        qs = self.model.filter(**(filters or {}))
+        qs: QuerySet[T] = self.model.filter(**(filters or {}))
         if using_db is not None:
             qs = qs.using_db(using_db)
         return await qs.delete()

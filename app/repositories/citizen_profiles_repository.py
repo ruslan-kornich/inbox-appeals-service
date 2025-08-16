@@ -1,4 +1,4 @@
-
+from tortoise.backends.base.client import BaseDBAsyncClient
 
 from app.models import CitizenProfile
 
@@ -11,8 +11,16 @@ class CitizenProfileRepository(BaseRepository[CitizenProfile]):
     """
 
     def __init__(self) -> None:
-        # BaseRepository now only expects the model class.
+        """
+        Initialize repository with the CitizenProfile model.
+        """
         super().__init__(model=CitizenProfile)
-    async def get_by_user_id(self, user_id: str, *, using_db=None) -> CitizenProfile | None:
+
+    async def get_by_user_id(
+        self,
+        user_id: str,
+        *,
+        using_db: BaseDBAsyncClient | None = None,
+    ) -> CitizenProfile | None:
         """Get profile by user id."""
         return await self.get_one(filters={"user_id": user_id}, using_db=using_db)

@@ -1,4 +1,3 @@
-# app/routes/auth.py
 from fastapi import APIRouter, HTTPException, status
 
 from app.schemas.auth import AccessTokenResponse, LoginBody, RegisterUserBody
@@ -9,8 +8,8 @@ router = APIRouter()
 service = AuthService()
 
 
-@router.post("/register", response_model=UserShort, status_code=status.HTTP_201_CREATED)
-async def register_user(body: RegisterUserBody):
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+async def register_user(body: RegisterUserBody) -> UserShort:
     """
     Register a new USER and its citizen profile.
     """
@@ -18,16 +17,22 @@ async def register_user(body: RegisterUserBody):
         user_id, role = await service.register_user(body)
         return UserShort(id=user_id, email=body.email, role=role)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
 
 
-@router.post("/login", response_model=AccessTokenResponse)
-async def login(body: LoginBody):
+@router.post("/login")
+async def login(body: LoginBody) -> AccessTokenResponse:
     """
     Login with email and password; returns access token.
     """
     try:
-        access = await service.login(email=body.email, password=body.password)
-        return AccessTokenResponse(access_token=access)
+        access_token = await service.login(email=body.email, password=body.password)
+        return AccessTokenResponse(access_token=access_token)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+        ) from exc
