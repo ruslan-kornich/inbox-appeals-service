@@ -1,13 +1,11 @@
 import asyncio
-from typing import Literal
-from random import randint
 
 from faker import Faker
 
 from app.config.db import DatabaseManager
 from app.models import UserRole
-from app.repositories.users_repository import UserRepository
 from app.repositories.citizen_profiles_repository import CitizenProfileRepository
+from app.repositories.users_repository import UserRepository
 from app.services.auth_service import hash_password
 
 faker = Faker("uk_UA")  # Генерирует украинские ФИО и номера

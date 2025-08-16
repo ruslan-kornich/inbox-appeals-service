@@ -1,6 +1,3 @@
-
-from typing import List
-
 from app.models import Ticket, TicketStatus, User
 from app.repositories.tickets_repository import TicketRepository
 
@@ -11,15 +8,18 @@ class StaffService:
     """
 
     def __init__(self) -> None:
+        """
+        Initialize StaffService with a TicketRepository instance.
+        """
         self.ticket_repo = TicketRepository()
 
     async def list_queue(
-        self,
-        *,
-        staff_user: User,
-        only_my: bool = False,
-        statuses: list[TicketStatus] | None = None,
-    ) -> List[Ticket]:
+            self,
+            *,
+            staff_user: User,
+            only_my: bool = False,
+            statuses: list[TicketStatus] | None = None,
+    ) -> list[Ticket]:
         """
         List tickets for processing. If only_my=True, return tickets assigned to staff_user.
         """
@@ -38,13 +38,13 @@ class StaffService:
         )
 
     async def update_ticket(
-        self,
-        *,
-        ticket_id: str,
-        staff_user: User | None,
-        new_status: TicketStatus | None = None,
-        staff_comment: str | None = None,
-        assign_to_self: bool | None = None,
+            self,
+            *,
+            ticket_id: str,
+            staff_user: User | None,
+            new_status: TicketStatus | None = None,
+            staff_comment: str | None = None,
+            assign_to_self: bool | None = None,
     ) -> int:
         """
         Update ticket with audit fields; optionally assign to current staff.

@@ -1,8 +1,5 @@
-
-
 import asyncio
 import sys
-
 from getpass import getpass
 
 from app.config.db import DatabaseManager
@@ -15,7 +12,6 @@ async def create_admin_user():
     """
     CLI utility to create an ADMIN user with a hashed password.
     """
-
     print("👤 Create admin user\n")
 
     email = input("Email: ").strip()
@@ -52,7 +48,7 @@ async def create_admin_user():
 
 if __name__ == "__main__":
     try:
-        #python3 -m app.utils.demo.create_admin
+        # python3 -m app.utils.demo.create_admin
         asyncio.run(create_admin_user())
     except KeyboardInterrupt:
         print("\nInterrupted.")

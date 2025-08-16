@@ -1,4 +1,3 @@
-
 from app.models import Ticket, TicketStatus
 from app.repositories.tickets_repository import TicketRepository
 
@@ -9,6 +8,9 @@ class TicketService:
     """
 
     def __init__(self) -> None:
+        """
+        Initialize TicketService with a TicketRepository instance.
+        """
         self.ticket_repo = TicketRepository()
 
     async def create_ticket(self, *, owner_id: str, text: str) -> Ticket:
@@ -16,7 +18,7 @@ class TicketService:
         Create a new ticket for the given owner.
         """
         async with self.ticket_repo.transaction() as conn:
-            ticket = await self.ticket_repo.create(
+            return await self.ticket_repo.create(
                 values={
                     "owner_id": owner_id,
                     "text": text,
@@ -24,7 +26,6 @@ class TicketService:
                 },
                 using_db=conn,
             )
-        return ticket
 
     async def list_my_tickets(self, *, owner_id: str) -> list[Ticket]:
         """

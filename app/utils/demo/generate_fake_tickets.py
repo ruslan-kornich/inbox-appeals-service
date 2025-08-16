@@ -1,5 +1,6 @@
 import asyncio
 import random
+
 from faker import Faker
 from tortoise import timezone
 

@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from passlib.context import CryptContext
 
 from app.models import UserRole
@@ -7,7 +5,6 @@ from app.repositories.citizen_profiles_repository import CitizenProfileRepositor
 from app.repositories.users_repository import UserRepository
 from app.schemas.auth import RegisterUserBody
 from app.security.jwt import create_access_token
-
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -28,17 +25,26 @@ class AuthService:
     """
 
     def __init__(self) -> None:
+        """
+        Initialize AuthService with user and profile repositories.
+        """
         self.user_repo = UserRepository()
         self.profile_repo = CitizenProfileRepository()
 
-    async def register_user(self, payload: RegisterUserBody) -> Tuple[str, UserRole]:
+    async def register_user(self, payload: RegisterUserBody) -> tuple[str, UserRole]:
         """
         Create a USER and its citizen profile inside a transaction.
-        Returns (user_id, role).
+
+        Returns:
+            tuple[str, UserRole]: A tuple with user id and role.
+
+        Raises:
+            ValueError: If the email is already registered.
+
         """
-        # this call uses default connection (no using_db) which is fine
         if await self.user_repo.exists(filters={"email": payload.email}):
-            raise ValueError("Email already registered")
+            error_message = "Email already registered"
+            raise ValueError(error_message)
 
         async with self.user_repo.transaction() as conn:
             user = await self.user_repo.create(
@@ -67,9 +73,14 @@ class AuthService:
     async def login(self, *, email: str, password: str) -> str:
         """
         Validate credentials and return JWT access token.
+
+        Raises:
+            ValueError: If email or password is invalid.
+
         """
         user = await self.user_repo.get_by_email(email)
         if not user or not verify_password(password, user.password_hash):
-            raise ValueError("Invalid email or password")
-        token = create_access_token(subject=str(user.id), role=user.role.value)
-        return token
+            error_message = "Invalid email or password"
+            raise ValueError(error_message)
+
+        return create_access_token(subject=str(user.id), role=user.role.value)

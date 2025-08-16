@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import jwt
 
@@ -10,10 +10,10 @@ def create_access_token(*, subject: str, role: str, expires_minutes: int | None 
     """
     Create a signed JWT access token with subject (user id) and role.
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     exp_minutes = expires_minutes or settings.JWT_ACCESS_EXPIRES_MINUTES
     expire = now + timedelta(minutes=exp_minutes)
-    payload: Dict[str, Any] = {
+    payload: dict[str, Any] = {
         "sub": subject,
         "role": role,
         "iat": int(now.timestamp()),

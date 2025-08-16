@@ -15,6 +15,7 @@ line-length = 120
 
 exclude = [
     "**/alembic/*",
+    "app/utils/demo/*"
 ]
 
 [tool.ruff.lint]
