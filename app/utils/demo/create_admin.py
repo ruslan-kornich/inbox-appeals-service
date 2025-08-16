@@ -1,5 +1,3 @@
-
-
 import asyncio
 import sys
 from getpass import getpass
@@ -50,7 +48,7 @@ async def create_admin_user():
 
 if __name__ == "__main__":
     try:
-        #python3 -m app.utils.demo.create_admin
+        # python3 -m app.utils.demo.create_admin
         asyncio.run(create_admin_user())
     except KeyboardInterrupt:
         print("\nInterrupted.")
