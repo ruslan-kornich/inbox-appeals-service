@@ -15,9 +15,10 @@ class Settings(BaseSettings):
     BACKEND_URL: str | None = "http://127.0.0.1:8000"
     FRONTEND_URL: str | None = None
 
-    ASYNC_DATABASE_URL: str  = "postgresql+asyncpg://inbox:Strong123@localhost:5432/inbox_appeals"
-
-
+    ASYNC_DATABASE_URL: str | None = None
+    JWT_SECRET_KEY: str | None = None
+    JWT_ALGORITHM: str | None = None
+    JWT_ACCESS_EXPIRES_MINUTES: int | None = None
 
     model_config = SettingsConfigDict(
         env_file=(".env", ".env.local"),
@@ -30,7 +31,6 @@ class Settings(BaseSettings):
         Init variables using AWS credentials.
         """
         super().__init__(**kwargs)
-
 
 
 settings = Settings()
