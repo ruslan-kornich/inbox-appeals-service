@@ -1,8 +1,25 @@
 from fastapi import APIRouter
 
-from app.routers.routes import auth
+from app.routers.routes import auth, tickets_user, tickets_staff, admin_staff, admin_analytics
 
 public_router = APIRouter()
+
+public_router.include_router(
+    admin_analytics.router,
+    prefix="/admin/analytics", tags=["Admin Analytics"]
+)
+public_router.include_router(
+    admin_staff.router,
+    prefix="/admin/staff", tags=["Admin Staff"]
+)
+public_router.include_router(
+    tickets_staff.router,
+    prefix="/staff/tickets", tags=["Staff"],
+)
+public_router.include_router(
+    tickets_user.router,
+    prefix="/tickets", tags=["Tickets"],
+)
 
 public_router.include_router(
     auth.router,
