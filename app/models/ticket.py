@@ -14,7 +14,7 @@ class Ticket(UUIDPrimaryKeyMixin, CreatedUpdatedFieldsMixin):
         "models.User",
         related_name="owned_tickets",
         on_delete=fields.OnDelete.CASCADE,
-        index=True,  # owner filtering for 'my tickets'
+        index=True,
     )
     text = fields.TextField()
 

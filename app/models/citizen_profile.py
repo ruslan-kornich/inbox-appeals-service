@@ -28,4 +28,4 @@ class CitizenProfile(UUIDPrimaryKeyMixin, CreatedUpdatedFieldsMixin):
         indexes = ("inn", "phone", "birth_date")
 
     def __str__(self) -> str:
-        return f"CitizenProfile<{self.id} user={self.user_id}>"
+        return f"CitizenProfile<{self.id} user={self.user.id}>"
