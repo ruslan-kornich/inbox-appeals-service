@@ -18,11 +18,9 @@ user_repo = UserRepository()
     dependencies=[Depends(require_roles(UserRole.STAFF))],
 )
 async def list_queue(
-    only_my: Annotated[
-        bool,
-        Query(default=False, description="If true, only show tickets assigned to current staff"),
-    ],
-    current: Annotated[tuple[str, str], Depends(get_current_user)],
+        current: Annotated[tuple[str, str], Depends(get_current_user)],
+        only_my: Annotated[bool, Query(description="Show only tickets assigned to me")] = False,
+
 ) -> list[TicketListItem]:
     """
     Staff queue listing: NEW/IN_PROGRESS by default.
@@ -65,9 +63,9 @@ async def get_ticket(ticket_id: str) -> TicketDetail:
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def update_ticket(
-    ticket_id: str,
-    body: StaffUpdateTicketBody,
-    current: Annotated[tuple[str, str], Depends(get_current_user)],
+        ticket_id: str,
+        body: StaffUpdateTicketBody,
+        current: Annotated[tuple[str, str], Depends(get_current_user)],
 ) -> None:
     """
     Update status/comment for a ticket.

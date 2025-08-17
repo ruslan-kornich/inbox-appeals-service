@@ -17,6 +17,18 @@ exclude = [
     "**/alembic/*",
     "app/utils/demo/*"
 ]
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+filterwarnings = [
+  "ignore::DeprecationWarning",
+
+    "ignore::DeprecationWarning:tortoise.*",
+    "ignore::DeprecationWarning:passlib.*",
+    "ignore:'crypt' is deprecated.*::DeprecationWarning"
+
+
+]
+addopts = "-q"
 
 [tool.ruff.lint]
 select = ["ALL"]

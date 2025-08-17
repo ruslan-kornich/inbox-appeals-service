@@ -47,8 +47,8 @@ async def create_staff(body: CreateStaffBody) -> UserShort:
     dependencies=[Depends(require_roles(UserRole.ADMIN))],
 )
 async def list_users_paginated(
-    page: Annotated[int, Query(1, ge=1, description="Page number")],
-    size: Annotated[int, Query(50, ge=1, le=100, description="Page size")],
+        page: Annotated[int, Query(ge=1, description="Page number")] = 1,
+        size: Annotated[int, Query(ge=1, le=100, description="Page size")] = 50,
 ) -> PaginatedResponse[UserShort]:
     """
     Paginated list of all regular users (role=USER).
