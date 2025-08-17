@@ -3,8 +3,9 @@ from uuid import UUID
 
 from tortoise.functions import Count, Max
 
-from app.models import Ticket, TicketStatus
+from app.models import Ticket, TicketStatus, UserRole
 from app.repositories.tickets_repository import TicketRepository
+from app.repositories.users_repository import UserRepository
 
 
 class AnalyticsService:
@@ -17,6 +18,7 @@ class AnalyticsService:
         Initialize AnalyticsService with a TicketRepository instance.
         """
         self.ticket_repo = TicketRepository()
+        self.user_repo = UserRepository()
 
     async def overview(
         self,
@@ -56,20 +58,17 @@ class AnalyticsService:
         date_to: datetime | None = None,
         staff_id: UUID | None = None,
     ) -> list[dict]:
-        """
-        Return per-staff performance metrics.
+        filters: dict[str, object] = {}
 
-        By default returns the entire dataset (unless filtered). Optionally filter by date or staff_id.
-        """
-        filters: dict[str, object] = {"last_modified_by_id__not": None}
+        if staff_id:
+            filters["last_modified_by_id"] = str(staff_id)
+        else:
+            filters["last_modified_by_id__not"] = None
 
         if date_from:
             filters["last_modified_at__gte"] = date_from
         if date_to:
             filters["last_modified_at__lt"] = date_to + timedelta(days=1)
-        if staff_id:
-            filters["last_modified_by_id"] = str(staff_id)
-
         rows = (
             await Ticket.filter(**filters)
             .annotate(cnt=Count("id"), last_mod=Max("last_modified_at"))
@@ -107,5 +106,16 @@ class AnalyticsService:
                 record["last_modified_at_max"] is None or last_modified > record["last_modified_at_max"]
             ):
                 record["last_modified_at_max"] = last_modified
+        all_staff = await self.user_repo.list_records(filters={"role": UserRole.STAFF})
+        for staff in all_staff:
+            staff_id_str = str(staff.id)
+            if staff_id_str not in performance_map:
+                performance_map[staff_id_str] = {
+                    "staff_id": staff_id_str,
+                    "resolved_count": 0,
+                    "rejected_count": 0,
+                    "in_progress_count": 0,
+                    "last_modified_at_max": None,
+                }
 
         return list(performance_map.values())

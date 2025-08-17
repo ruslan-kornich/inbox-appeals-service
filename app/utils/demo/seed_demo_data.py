@@ -1,14 +1,15 @@
 import asyncio
 import random
 import sys
+from datetime import timedelta
 
 from faker import Faker
 from tortoise import timezone
 
 from app.config.db import DatabaseManager
-from app.models import Ticket, User, TicketStatus, UserRole
-from app.repositories.users_repository import UserRepository
+from app.models import Ticket, TicketStatus, User, UserRole
 from app.repositories.tickets_repository import TicketRepository
+from app.repositories.users_repository import UserRepository
 from app.services.auth_service import hash_password
 
 faker = Faker("uk_UA")
@@ -51,29 +52,30 @@ async def seed_demo_data(reset: bool = False):
 
     # 2. Create 10 STAFF users
     print("👥 Creating 10 staff users...")
+    staff_users = []
     for i in range(10):
-        await user_repo.create(values={
-            "email": f"staff{i+1}@example.com",
+        staff = await user_repo.create(values={
+            "email": f"staff{i + 1}@example.com",
             "password_hash": hash_password(DEMO_PASSWORD),
             "role": UserRole.STAFF,
         })
+        staff_users.append(staff)
     print("✅ 10 staff users created.")
 
     # 3. Create 30 USER users
     print("👤 Creating 30 user accounts...")
+    user_owners = []
     for i in range(30):
-        await user_repo.create(values={
-            "email": f"user{i+1}@example.com",
+        user = await user_repo.create(values={
+            "email": f"user{i + 1}@example.com",
             "password_hash": hash_password(DEMO_PASSWORD),
             "role": UserRole.USER,
         })
+        user_owners.append(user)
     print("✅ 30 users created.")
 
     # 4. Generate 300 tickets (10 per user)
     print("🧾 Generating fake tickets...")
-
-    user_owners = await user_repo.list_records(filters={"role": UserRole.USER})
-    staff_users = await user_repo.list_records(filters={"role": UserRole.STAFF})
 
     tickets_to_create = []
 
@@ -90,19 +92,28 @@ async def seed_demo_data(reset: bool = False):
                 k=1
             )[0]
 
+            created_days_ago = random.randint(0, 14)
+            created_at = timezone.now() - timedelta(days=created_days_ago)
+
             ticket = {
                 "owner_id": user.id,
                 "text": faker.paragraph(nb_sentences=3),
                 "status": status,
+                "created_at": created_at,
+                "updated_at": created_at,
             }
 
             if status != TicketStatus.NEW:
                 staff = random.choice(staff_users)
+                modified_offset = random.randint(0, created_days_ago)  # modification closer to now
+                modified_at = created_at + timedelta(days=modified_offset)
+
                 ticket.update({
                     "staff_assignee_id": staff.id,
-                    "staff_comment": faker.sentence(),
+                    "staff_comment": faker.text(max_nb_chars=100),
                     "last_modified_by_id": staff.id,
-                    "last_modified_at": timezone.now(),
+                    "last_modified_at": modified_at,
+                    "updated_at": modified_at,
                 })
 
             tickets_to_create.append(ticket)
@@ -119,4 +130,4 @@ if __name__ == "__main__":
         reset_flag = "--reset" in sys.argv
         asyncio.run(seed_demo_data(reset=reset_flag))
     except KeyboardInterrupt:
-        print("\nInterrupted.")
+        print("\n⛔️ Interrupted by user.")
