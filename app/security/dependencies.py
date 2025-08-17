@@ -27,7 +27,7 @@ async def get_current_user(
 
     # Optionally ensure user still exists (cheap guard)
     repo = UserRepository()
-    user = await repo.get_by_id(id=user_id)
+    user = await repo.get_by_id(pk=user_id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
