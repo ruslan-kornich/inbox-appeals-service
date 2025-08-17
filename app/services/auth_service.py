@@ -1,9 +1,10 @@
 from passlib.context import CryptContext
 
+from app.config.settings import settings
 from app.models import UserRole
 from app.repositories.citizen_profiles_repository import CitizenProfileRepository
 from app.repositories.users_repository import UserRepository
-from app.schemas.auth import RegisterUserBody
+from app.schemas.auth import RegisterUserBody, AccessTokenResponse
 from app.security.jwt import create_access_token
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -70,17 +71,24 @@ class AuthService:
 
         return str(user.id), user.role
 
-    async def login(self, *, email: str, password: str) -> str:
+    async def login(self, *, email: str, password: str) -> AccessTokenResponse:
         """
-        Validate credentials and return JWT access token.
+        Validate credentials and return JWT access token + user info.
 
         Raises:
             ValueError: If email or password is invalid.
-
         """
         user = await self.user_repo.get_by_email(email)
         if not user or not verify_password(password, user.password_hash):
-            error_message = "Invalid email or password"
-            raise ValueError(error_message)
+            raise ValueError("Invalid email or password")
 
-        return create_access_token(subject=str(user.id), role=user.role.value)
+        expires_in = settings.JWT_ACCESS_EXPIRES_MINUTES * 60
+        token = create_access_token(subject=str(user.id), role=user.role.value,
+                                    expires_minutes=settings.JWT_ACCESS_EXPIRES_MINUTES)
+
+        return AccessTokenResponse(
+            access_token=token,
+            user_id=str(user.id),
+            role=user.role.value,
+            expires_in=expires_in,
+        )

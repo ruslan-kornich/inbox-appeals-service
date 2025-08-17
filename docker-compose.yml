@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    container_name: inbox-db
+    restart: always
+    environment:
+      POSTGRES_USER: inbox
+      POSTGRES_PASSWORD: Strong123
+      POSTGRES_DB: inbox_appeals
+    ports:
+      - "55432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    container_name: inbox-api
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    restart: on-failure
+    volumes:
+      - .:/app
+    command: /entrypoint.sh
+
+volumes:
+  postgres_data:

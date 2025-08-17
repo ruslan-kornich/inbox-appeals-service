@@ -25,7 +25,9 @@ class LoginBody(BaseModel):
 
 
 class AccessTokenResponse(BaseModel):
-    """Returned access token."""
-
+    """Returned access token with additional user info."""
     access_token: str
-    token_type: str = "bearer"
+    token_type: str = "Bearer"
+    user_id: str
+    role: str
+    expires_in: int  # seconds

@@ -6,7 +6,7 @@ requires-python = ">=3.12"
 
 [tool.aerich]
 tortoise_orm = "app.config.db.TORTOISE_ORM"
-location = "app/migrations"
+location = "./migrations"
 src_folder = "./."
 
 [tool.ruff]

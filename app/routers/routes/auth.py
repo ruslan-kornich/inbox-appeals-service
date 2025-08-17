@@ -29,8 +29,7 @@ async def login(body: LoginBody) -> AccessTokenResponse:
     Login with email and password; returns access token.
     """
     try:
-        access_token = await service.login(email=body.email, password=body.password)
-        return AccessTokenResponse(access_token=access_token)
+        return await service.login(email=body.email, password=body.password)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
